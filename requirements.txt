@@ -1,0 +1,6 @@
+numpy
+scipy
+matplotlib
+plotly
+ortools      # optional: only used if you want a CP-SAT experiment; the LP bound uses scipy/HiGHS
+pytest

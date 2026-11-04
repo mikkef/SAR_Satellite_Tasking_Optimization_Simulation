@@ -1,0 +1,30 @@
+// Headless check of the globe controls: stubs Plotly + DOM, runs the real script, asserts behaviour.
+const fs = require('fs');
+const [,, scriptPath] = process.argv;
+const src = fs.readFileSync(scriptPath, 'utf8').replace(/\{plot_id\}/g, 'gd');
+const calls = []; const els = {}; const timers = [];
+const mk = (id) => { const e = {id, style: {}, value: '', textContent: '', _html: '', children: [], appendChild(c) { this.children.push(c); }};
+  Object.defineProperty(e, 'innerHTML', {get() { return this._html; }, set(v) { this._html = v; for (const m of v.matchAll(/id="([^"]+)"/g)) els[m[1]] = mk(m[1]); }}); return e; };
+els['gd'] = mk('gd');
+global.window = global;
+global.Plotly = {restyle(gd, upd, idx) { calls.push({upd, idx}); return Promise.resolve(); }};
+global.document = {getElementById: (id) => els[id] || null, createElement: (t) => mk('_' + t), body: {appendChild(e) { e.children.forEach(() => {}); }}};
+global.setInterval = (fn, ms) => { timers.push({fn, ms}); return timers.length; }; global.clearInterval = () => {};
+// the ui div's innerHTML assignment creates the controls
+eval(src);
+const S = window.__sar; const fail = (m) => { console.error('FAIL: ' + m); process.exit(1); };
+const first = calls[calls.length - 1];
+if (!first || first.idx.length !== 3) fail('initial draw must restyle exactly the 3 moving traces');
+for (const k of ['x', 'y', 'z']) if (first.upd[k].length !== 3) fail('restyle payload must carry 3 arrays for ' + k);
+if (JSON.stringify(Object.keys(first.upd).sort()) !== '["x","y","z"]') fail('restyle must only change x/y/z (never layout/camera): ' + Object.keys(first.upd));
+S.draw(10); if (S.state().cur !== 10) fail('draw(10)');
+const n0 = calls.length; S.setPolicy('static');
+if (calls.length <= n0) fail('setPolicy must restyle visibility');
+const vis = calls.slice(n0).filter(c => c.upd.visible !== undefined);
+if (vis.length < 2) fail('visibility updates missing');
+if (S.state().policy !== 'static') fail('policy not switched');
+S.start(); const t = timers[timers.length - 1]; for (let i = 0; i < 5; i++) t.fn(); if (S.state().cur !== 15) fail('animation should advance 5 frames, got ' + S.state().cur);
+S.stop();
+const ok = calls.every(c => c.idx.length === 3 || c.upd.visible !== undefined);
+if (!ok) fail('unexpected restyle call');
+console.log('OK: ' + calls.length + ' restyle calls; only x/y/z of 3 traces (+ visibility toggles) were touched; camera/layout never modified');

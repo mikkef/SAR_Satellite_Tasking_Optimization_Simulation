@@ -1,0 +1,1 @@
+"""Resource-aware SAR constellation tasking with rolling-horizon re-planning (see README.md)."""
