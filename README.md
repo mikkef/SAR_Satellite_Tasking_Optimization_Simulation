@@ -10,6 +10,10 @@ to downlink**, battery + eclipse, slew agility, propellant, and a shared ground-
 
 > Illustrative engineering model with plausible (not proprietary) numbers. Not affiliated with, or based on data from, any operator.
 
+![24 h of rolling operations](results/globe.gif)
+
+*24 h of operations (policy `hybrid`). Coloured dots = orders delivered within their SLA, by category (they accumulate over the day) · red lines = imaging · **yellow diamonds = ground stations**, yellow lines = downlink beams · red ring = satellite in safe mode, red diamond = station down. Regenerate with `python make_gif.py` (options: `--policy`, `--fps`, `--frame-min`, `--size`).*
+
 ![overview](results/earth_overview.png)
 
 **Interactive globe:** open `results/globe_3d.html` — pick a policy, press play and **keep rotating the globe while it plays** (gold = downlink beams, red = imaging).
@@ -106,6 +110,7 @@ sartasking/
   viz.py                    figures + interactive globe
 tests/                      23 tests (+ headless Node test of the globe controls)
 run_demo.py                 full study
+make_gif.py                 renders results/globe.gif for the README
 ```
 
 ## 4. About the 3D globe
