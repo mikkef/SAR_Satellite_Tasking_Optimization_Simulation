@@ -117,6 +117,26 @@ flowchart TD
 
 ![ops](results/ops_dashboard.png)
 
+### Rules of the simulation
+
+Think of the optimizer as a player managing a satellite fleet for one simulated day.
+
+**Goal:** deliver as many valuable customer orders as possible before their deadlines, while keeping the plan feasible with the satellites and ground stations available.
+
+**Orders:** each order requests an image of a location, lists acceptable image products, and has a reward and an SLA deadline. The SLA clock starts when the order arrives. Rush orders have shorter deadlines and higher rewards. Some orders are waiting at the start of the day; others arrive later, including bursts of disaster-related requests.
+
+**Choices:** for each order, the optimizer can choose an available satellite, image product, and observation time, or leave the order unscheduled. It can update its plan as new orders and disruptions become known. Every policy is tested on the same order stream.
+
+**Limits:** a satellite must be able to see the target and turn in time from its previous observation. It cannot image while pointing at a ground station or during an outage or maintenance window. Its battery must remain above its minimum and its storage must not overflow. Collected data waits in a first-in, first-out queue until a ground-station contact can download it; the full product must reach the ground before the order's deadline. Ground-station time and downlink capacity are limited.
+
+**Planning rules:** the planning horizon is 8 hours. Observations starting within the next 15 minutes are frozen because they are treated as already sent to the satellite. The tasking window is 24 hours, and the simulation continues to 30 hours so data collected near the end of the tasking day can still be delivered.
+
+**Failures and disruptions:** an acquisition has a 3% chance of failure (the same candidate has the same failure draw across policies). The oracle reference has no acquisition failures. The scenario also includes satellite and ground-station outages, equipment degradation, and maintenance; these can force the planner to change its schedule.
+
+**Scoring:** an order earns value only if its product is actually delivered before its deadline. Image quality and seasonal value affect the reward; observation costs are subtracted using the configured cost weight. A planned observation by itself does not count as a delivered order.
+
+The strategies (`static`, `insert_only`, `insert_preempt`, `rolling`, `hybrid`, and `oracle`) are different ways of playing under these rules. The comparison reports both the value delivered and how much each strategy changes its schedule.
+
 ## 3. Layout
 ```
 sartasking/
