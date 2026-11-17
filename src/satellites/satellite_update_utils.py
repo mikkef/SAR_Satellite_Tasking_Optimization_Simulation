@@ -21,6 +21,7 @@ import numpy as np
 
 @dataclass
 class SatState:
+    """The live snapshot: current resources, pointing, pending data, and known interruptions."""
     t: float                                   # snapshot time (s)
     soc_wh: float                              # battery energy
     queue: list                                # FIFO of onboard data: [task_id | None, remaining_gb, deadline_s, value]
@@ -39,6 +40,7 @@ class SatState:
 
 def initial_state(sat) -> SatState:
     """State at t=0 straight from the satellite specification (the backlog already on board is one anonymous queue entry)."""
+    # Start with the design capacities, initial battery and fuel, and data already onboard.
     return SatState(t=0.0, soc_wh=sat.soc_init_wh, queue=[[None, sat.backlog_gb, math.inf, 0.0]], roll_deg=sat.current_angle,
                     last_end_t=0.0, fuel_kg=sat.propellant_kg, storage_cap_gb=sat.storage_gb, battery_cap_wh=sat.battery_wh)
 
@@ -65,6 +67,7 @@ def apply_telemetry(state: SatState, soc_wh=None, stored_gb=None) -> None:
     """Replace the MODELLED battery level / stored data by what the satellite actually reported."""
     if soc_wh is not None: state.soc_wh = min(soc_wh, state.battery_cap_wh)
     if stored_gb is not None and state.stored_gb > 0:
+        # Scale every queued item equally so their combined size matches the satellite report.
         f = stored_gb / state.stored_gb
         for q in state.queue: q[1] *= f                                     # scale every queued product proportionally
 
@@ -92,6 +95,7 @@ def advance_state(R, sat, state: SatState, obs: list, t_to: float):
     Returns (new_state, info) with info = dict(soc, q, deliveries, transfers, executed, skipped).
     Approximation: data of an observation still in progress at t_to joins the queue immediately.
     """
+    # Update a copy so the caller's original snapshot remains available.
     dt = R.dt
     k0, k1 = int(round(state.t / dt)), int(round(t_to / dt))
     st = copy.deepcopy(state)
@@ -106,6 +110,7 @@ def advance_state(R, sat, state: SatState, obs: list, t_to: float):
     soc_h, q_h = np.empty(k1 - k0), np.empty(k1 - k0)
     deliveries, transfers, executed, skipped = [], {}, [], []
     for i in range(k1 - k0):
+        # Each step starts an image, adds data from completed images, and then drains the downlink queue.
         o = starts.get(i); e_use = 0.0
         if o is not None:
             if min(st.battery_cap_wh, x + base[i] - o.e) < floor - 1e-9:
@@ -135,6 +140,7 @@ def advance_state(R, sat, state: SatState, obs: list, t_to: float):
         for oo in left: fifo.append([oo.task, oo.d, oo.deadline, oo.value]); q += oo.d
     st.t, st.soc_wh, st.queue = t_to, x, [list(r) for r in fifo]
     # fuel: continuous drag make-up + completed maintenance burns
+    # Drag uses fuel throughout the interval; maintenance fuel is charged once when its burn ends.
     st.fuel_kg = max(0.0, st.fuel_kg - sat.drag_kg_per_day * (t_to - state.t) / 86400.0)
     for t0, t1, burn in list(st.maintenance):
         if state.t < t1 <= t_to: st.fuel_kg = max(0.0, st.fuel_kg - burn); st.maintenance.remove((t0, t1, burn))

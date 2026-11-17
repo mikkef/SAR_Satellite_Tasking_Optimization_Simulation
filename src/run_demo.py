@@ -18,9 +18,12 @@ ap = argparse.ArgumentParser()
 ap.add_argument("--tasks", type=int, default=1500); ap.add_argument("--out", default="results")
 ap.add_argument("--quick", action="store_true", help="skip the multi-stream study and the batch solver comparison")
 ap.add_argument("--no-html", action="store_true"); ap.add_argument("--cache", default=None, help="dev: reuse a pickled main run")
+# Read the command-line choices once so the rest of this file can run the requested study.
 a = ap.parse_args(); os.makedirs(a.out, exist_ok=True); T = time.time()
 
 # ------------------------------------------------------------------ 1. main order stream, all policies
+# Build one shared set of orders and satellite resources, then run every policy against it.
+# Sharing the same input makes the policy comparison fair: only the planning strategy changes.
 if a.cache and os.path.exists(a.cache):
     W, out = pickle.load(open(a.cache, "rb")); print("loaded cache")
 else:
@@ -33,6 +36,8 @@ else:
     if a.cache: pickle.dump((W, out), open(a.cache, "wb"))
 
 # ------------------------------------------------------------------ 2. several independent streams
+# Optional repeat runs use different order streams. This checks whether the main comparison
+# is typical, instead of depending on one especially easy or difficult set of orders.
 study = None
 if not a.quick:
     print("\nRepeating on independent order streams ...")
@@ -43,6 +48,8 @@ if not a.quick:
         print(f"{p:15s} {s['objective'][0]:14.0f} ± {s['objective'][1]:5.0f} {100 * s['sla_rate'][0]:7.1f} {100 * s['rush_rate'][0]:7.1f} {s['churn_opt'][0] + s['churn_disruption'][0]:7.0f}")
 
 # ------------------------------------------------------------------ 3. batch solver comparison on the hindsight problem
+# This separate experiment gives the solvers every order at the start. It is a reference
+# for solver quality, not another rolling-operation policy.
 batch = None
 if not a.quick:
     print("\nBatch solver comparison (all orders known, plan from t=0) ...")
@@ -56,6 +63,8 @@ if not a.quick:
     print(f"  LP relaxation upper bound: {ub:.1f}")
 
 # ------------------------------------------------------------------ 4. results + figures
+# Save the numbers and pictures after the simulations finish. These reporting steps read
+# the outcomes; they do not feed back into or change any policy's decisions.
 kpis = {p: {k: v for k, v in o.kpi.items() if k != "by_cat"} for p, o in out.items()}
 json.dump({"main_stream": kpis, "multi_stream": study, "batch": batch}, open(f"{a.out}/results.json", "w"), indent=2, default=float)
 rings = viz.load_rings("data/land_110m.json")

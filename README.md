@@ -90,6 +90,31 @@ A product is delivered only when **all** its bytes have left, possibly over seve
 
 **Disruptions** (`rolling.py`, announced while operating): VX-C2 safe mode 05–11 h · Svalbard down 08–14 h · VX-B6 storage 150→80 GB at 10 h · VX-A4 battery fade + solar −10 % at 14 h and a telemetry correction at 16 h · a known VX-A2 maintenance burn (consumes propellant). *Fuel* is modelled as drag make-up plus maintenance burns; it blocks imaging during a burn but does not limit tasking itself.
 
+### How opportunities become a schedule
+
+The project has two different planning steps: first it finds **what could be done**; then an optimizer chooses **what to do**. The first step generates options. The second step solves the scheduling problem.
+
+```mermaid
+flowchart TD
+    A[Orders and SLAs] --> C[Build the shared scenario]
+    B[Satellites, ground stations, and orbit data] --> C
+    C --> D[candidates.py: find possible imaging times]
+    C --> E[ground_station_utils.py: plan downlink contacts]
+    D --> F[problem.py: keep options that are currently known and feasible]
+    E --> F
+    G[Current satellite state] --> F
+    F --> H[solvers.py: choose observations for the plan]
+    H --> I[rolling.py: simulate the plan in operation]
+    I --> J[Updated satellite state and actual deliveries]
+    J -->|next planning step| F
+    I --> K[_score: measure deliveries that met their SLAs]
+```
+
+* `candidates.py` and `ground_station_utils.py` prepare opportunities and downlink contacts. They do **not** decide which customer orders win.
+* `problem.py` removes choices that are unknown, outside the planning window, or infeasible with the satellite's current state.
+* `solvers.py` chooses a set of observations from the remaining choices. **This is the optimization step that builds the schedule.**
+* `rolling.py` simulates what happens, updates the satellite states, and replans as orders or disruptions arrive. The final score is based on products actually delivered before their deadlines, not just on planned observations.
+
 ![ops](results/ops_dashboard.png)
 
 ## 3. Layout

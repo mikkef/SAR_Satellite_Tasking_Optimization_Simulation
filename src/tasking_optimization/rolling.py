@@ -87,7 +87,9 @@ class World:
 
 
 def build_world(n_tasks=1500, seed=7, cfg: SimConfig | None = None, disruptions=None) -> World:
+    """Create the shared scenario: orders, satellites, ground stations, and possible observations."""
     cfg = cfg or SimConfig()
+    # Contacts are planned before tasking; all policies start with this same network capacity.
     fleet, stations, events = make_fleet(), make_stations(), generate_task_stream(n_tasks, seed)
     passes = compute_passes(fleet, stations, cfg.t_end)
     contacts0 = plan_contacts(passes)
@@ -111,6 +113,7 @@ class Outcome:
 
 
 def run_policy(world: World, policy: str, cfg: SimConfig | None = None, verbose=False) -> Outcome:
+    """Operate one planning strategy through the day and return what actually happened."""
     cfg = cfg or world.cfg; t_wall = time.time()
     fleet, pool, events = world.fleet, world.pool, world.events
     S, E, n_steps, dt = len(fleet), len(events), world.n_steps, cfg.dt
@@ -128,9 +131,12 @@ def run_policy(world: World, policy: str, cfg: SimConfig | None = None, verbose=
     tick, last_plan_t, tick_i = cfg.tick_s[policy], -1.0, 0
 
     def fails(g):                                           # identical draws for every policy (oracle is failure-free by definition)
+        # Reusing the same random draw for a candidate keeps failure luck comparable
+        # when two policies choose to observe the same order.
         return policy != "oracle" and random.Random(cfg.seed * 1_000_003 + int(g)).random() < cfg.exec_fail_prob
 
     def apply_disruption(d, t):
+        # Update the live satellite or station state when an announced problem takes effect.
         nonlocal contacts
         if d.kind == "gs_outage":
             contacts = apply_station_outage(contacts, world.passes, d.target, d.t_start, d.t_end, now=t)
@@ -147,16 +153,20 @@ def run_policy(world: World, policy: str, cfg: SimConfig | None = None, verbose=
     while t < cfg.t_task - 1e-9:
         t_next = min(t + tick, cfg.t_task)
         # ---- 1. disruptions
+        # Apply newly announced outages or equipment changes before making the next plan.
         changed = False
         for i, d in enumerate(disr):
             if not applied[i] and d.announce_t <= t + 1e-9: apply_disruption(d, t); applied[i] = True; changed = True
         # ---- 2. planning
+        # Each strategy chooses when and how to plan. The problem view only exposes orders
+        # known so far (except the oracle), and protects observations too close to change.
         need_plan = (policy != "static" and policy != "oracle") or (policy == "static" and t == 0) or (policy == "oracle" and (t == 0 or changed))
         if need_plan:
             known = np.ones(E, bool) if policy == "oracle" else pool.ev_arrival <= t
             horizon = cfg.t_task if policy in ("static", "oracle") else cfg.plan_horizon_s
             P = Problem(pool, R, states, t, known, done, cfg.lam, horizon)
             plan, dropped = P.make_plan(plan_gids, t + cfg.freeze_s)
+            # Compare old and new plans to count observations removed during replanning.
             old = {g for l in plan_gids for g in l}
             fresh = ((pool.ev_arrival > last_plan_t) & (pool.ev_arrival <= t)) | retry          # orders since last planning + retries
             new_idx = np.where(fresh[P.ev] & ~done[P.ev])[0]; rush_idx = new_idx[P.rush[new_idx]]
@@ -176,6 +186,8 @@ def run_policy(world: World, policy: str, cfg: SimConfig | None = None, verbose=
         timeline["t"].append(t); timeline["backlog"].append(int(((pool.ev_arrival <= t) & ~done).sum()))
         timeline["planned"].append(sum(len(l) for l in plan_gids))
         # ---- 3. execution against reality
+        # Run observations that begin in this time interval. A planned observation can still
+        # be blocked by a real outage or fail; successful data must also be downlinked later.
         for s in range(S):
             gl = plan_gids[s]; obs = []
             for g in [g for g in gl if pool.t[g] < t_next]:
@@ -199,6 +211,8 @@ def run_policy(world: World, policy: str, cfg: SimConfig | None = None, verbose=
                 for tk, gb in dct.items(): tr[tk] = tr.get(tk, 0.0) + gb
         t = t_next; tick_i += 1
     # ---- flush: let the downlink queues drain until the end of the simulation
+    # The tasking day can end while data is still on a satellite, so continue the simulation
+    # to allow those already-collected products to reach the ground.
     t_fin = (n_steps - 1) * dt
     for s in range(S):
         k0 = int(round(states[s].t / dt)); k1 = int(round(t_fin / dt))
@@ -212,6 +226,7 @@ def run_policy(world: World, policy: str, cfg: SimConfig | None = None, verbose=
 
 # ----------------------------------------------------------------------------- scoring from realised outcomes
 def _score(world, cfg, policy, executed, deliveries_raw, timeline, hist_soc, hist_q, transfers, contacts, states, stats, wall):
+    """Calculate policy results from completed deliveries, not just scheduled observations."""
     pool, events, dt = world.pool, world.events, cfg.dt
     deliv = {tk: (step * dt, dl, val) for tk, step, dl, val in deliveries_raw if tk is not None}
     recs, served, lat, value_events, dels = [], {}, [], [], []
@@ -235,6 +250,7 @@ def _score(world, cfg, policy, executed, deliveries_raw, timeline, hist_soc, his
 
 
 def run_policies(world, policies=POLICIES, cfg=None, verbose=True):
+    """Run the requested strategies on the same scenario and collect their outcomes."""
     out = {}
     for p in policies:
         out[p] = run_policy(world, p, cfg)
@@ -246,6 +262,7 @@ def run_policies(world, policies=POLICIES, cfg=None, verbose=True):
 def run_study(n_tasks=1500, seeds=(11, 12, 13, 14), policies=POLICIES, cfg=None, verbose=True):
     """Repeat the whole comparison on several independent random order streams (different tasks, arrivals, SLAs).
     Returns {policy: {metric: (mean, std)}} so that conclusions do not rest on one lucky stream."""
+    # Keep each stream separate, then summarize how much each metric varies between runs.
     runs = {p: [] for p in policies}
     for sd in seeds:
         W = build_world(n_tasks, seed=sd, cfg=cfg)

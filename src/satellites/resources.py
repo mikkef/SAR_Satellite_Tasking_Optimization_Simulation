@@ -24,6 +24,7 @@ from ..earth_sun_orbits.geo import eclipse_mask
 
 class SatResources:
     def __init__(self, sat, n_steps: int, dt: float, guard_s: float = 15.0):
+        """Prepare the time-by-time battery, storage, and downlink limits for one satellite."""
         self.sat, self.n, self.dt = sat, n_steps, dt
         ts = np.arange(n_steps) * dt
         self.eclipse = eclipse_mask(sat.eci(ts)[0])                       # in Earth's shadow?
@@ -38,6 +39,7 @@ class SatResources:
         """(Re)build everything that depends on the downlink contact plan."""
         n, dt, sat = self.n, self.dt, self.sat
         self.contacts = list(contacts)
+        # Mark when the satellite can send data, and block imaging while it points at an antenna.
         self.in_contact = np.zeros(n, bool)
         self.step_contact = np.full(n, -1, dtype=int)                     # index of the contact active at each step
         self.cap = np.zeros(n)                                            # GB that can leave per step
@@ -63,6 +65,7 @@ class SatResources:
 
     def set_anchor(self, state):
         """Start every evaluation from `state` (time, battery, queue, capacities, solar factor)."""
+        # Replanning starts from the current snapshot, including data already waiting to download.
         sat = self.sat
         self.state = state
         k0 = self.k0 = int(round(state.t / self.dt))
@@ -89,6 +92,8 @@ class SatResources:
 
     # ------------------------------------------------------------------ fast evaluation (relative to the anchor)
     def curves(self, k, ka, e, d):
+        """Estimate battery charge and stored data at each time step for a proposed observation list."""
+        # Imaging uses power at its start; new image data enters storage when acquisition finishes.
         k, ka = np.asarray(k) - self.k0, np.asarray(ka) - self.k0
         inc = self.base_s.copy(); inc[k] -= e                                   # imaging energy at the start step
         y = self.soc0 + np.cumsum(inc)
@@ -100,6 +105,7 @@ class SatResources:
 
     def evaluate(self, k, ka, e, d):
         """-> (feasible, ABSOLUTE delivery step of each new product). Infeasible if battery or storage limit is violated."""
+        # Reject schedules that break battery or storage limits, then estimate each product's delivery time.
         soc, q, arr = self.curves(k, ka, e, d)
         if soc.min() < self.floor - 1e-9 or q.max() > self.storage_cap + 1e-9:
             return False, None
@@ -110,6 +116,7 @@ class SatResources:
     # ------------------------------------------------------------------ independent slow checks
     def slow_simulate(self, k, ka, e, d):
         """Step-by-step reference implementation (no shared code with `evaluate`)."""
+        # This straightforward version cross-checks the faster calculation above.
         k0, n = self.k0, len(self.base_s)
         img, arrivals = {}, {}
         for j in range(len(k)):
@@ -133,6 +140,7 @@ class SatResources:
 
     def transfer_log(self, k, ka, d):
         """Which bytes leave on which contact (FIFO): {contact_index: {product_position: GB}}; position -1 = pre-existing queue."""
+        # Track products through the first-in, first-out queue to show what each pass carries.
         k0 = self.k0
         arrivals = {}
         for j in range(len(k)): arrivals.setdefault(int(ka[j]) - k0, []).append((j, d[j]))

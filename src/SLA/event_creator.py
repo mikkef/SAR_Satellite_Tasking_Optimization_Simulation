@@ -72,6 +72,7 @@ CATEGORY_PROFILE = {
 
 
 def make_events(n: int = 3000, seed: int = 7, month: int = 11) -> list[Event]:
+
     """Create n tasks (location + product requirements + reward). No timing yet: see sla_generator_utils."""
     rng = random.Random(seed)
     weights = [h[5] for h in HOTSPOTS]

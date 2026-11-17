@@ -39,6 +39,7 @@ SCAN = Mode("scan", 15.0, 30, 16.0, 750)
 # --------------------------------------------------------------------------- satellite specification
 @dataclass(eq=False)
 class Satellite:
+    """A satellite's fixed design and orbit; its live battery and data state is stored separately."""
     name: str
     plane: str
     gen: str
@@ -71,6 +72,7 @@ class Satellite:
     fuel_reserve_kg: float = 0.3         # below this the satellite needs operator attention
 
     def __post_init__(self):
+        # Derive orbit radius, speed, and repeat time from the satellite's altitude.
         self.a = RE + self.altitude_km
         self.n = math.sqrt(MU / self.a ** 3)             # mean motion, rad/s
         self.period = 2 * math.pi / self.n
@@ -78,6 +80,7 @@ class Satellite:
     # ---- orbit propagation -------------------------------------------------------------
     def eci(self, t):
         """Position / velocity in the inertial frame (km, km/s) for a time array t (s since t=0)."""
+        # Move around a circular orbit, then rotate the orbital plane into 3D space.
         t = np.atleast_1d(np.asarray(t, float))
         u = math.radians(self.phase_deg) + self.n * t
         i, om = math.radians(self.inclination_deg), math.radians(self.raan_deg)
@@ -90,6 +93,7 @@ class Satellite:
 
     def ecef(self, t):
         """Position / velocity in the Earth-fixed frame (the Earth rotates under the orbit)."""
+        # Rotate the position with Earth so it can be compared with ground locations.
         t = np.atleast_1d(np.asarray(t, float))
         r, v = self.eci(t)
         th = THETA0 + W_E * t
@@ -107,6 +111,7 @@ class Satellite:
 
     def energy_wh(self, mode: Mode, roll: float) -> float:
         """Energy of one observation: transmitter/processing during the dwell plus the slew out to the roll angle."""
+        # Combine imaging power over time with the energy used to change the viewing angle.
         return mode.power_w * mode.dwell / 3600.0 + self.slew_wh_per_deg * abs(roll)
 
     def slew_need(self, a1: float, a2: float) -> float:
@@ -130,6 +135,7 @@ def make_fleet(seed: int = 3) -> list[Satellite]:
     """24 satellites in 4 planes: three sun-synchronous planes (10:30, 22:30 and dawn-dusk local time of ascending node)
     and one 45-degree plane that mixes both hardware generations. Satellites in a plane are evenly phased."""
     rng = random.Random(seed)
+    # Each plane has its own orbit and equipment mix; satellites are spaced evenly around it.
     planes = [  # name, LTAN (h) or None, inclination, altitude, generation(s), count
         ("A", 10.5, 97.7, 560, [GEN2], 6),
         ("B", 22.5, 97.7, 580, [GEN2], 6),
