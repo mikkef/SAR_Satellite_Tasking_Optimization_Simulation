@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="1120" viewBox="0 0 1440 1120" role="img" aria-labelledby="title desc">
+  <title id="title">The satellite tasking game</title>
+  <desc id="desc">A satellite flies above a chessboard of customer orders. Its beam marks possible observations, and a separate ground station receives acquired data. Only on-time deliveries score.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f7f9fc"/><stop offset="1" stop-color="#e9eff7"/></linearGradient>
+    <linearGradient id="beam" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e85d4a" stop-opacity=".12"/><stop offset="1" stop-color="#e85d4a" stop-opacity=".30"/></linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="5" stdDeviation="8" flood-color="#20314b" flood-opacity=".12"/></filter>
+    <marker id="arrowGold" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#d99b28"/></marker>
+    <marker id="arrowBlue" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#3978b8"/></marker>
+    <style>
+      .title{font:700 42px 'Segoe UI',Arial,sans-serif;fill:#17263b;letter-spacing:1px}.subtitle{font:400 20px 'Segoe UI',Arial,sans-serif;fill:#52647b}
+      .card-title{font:700 21px 'Segoe UI',Arial,sans-serif;fill:#20314b;letter-spacing:.6px}.body{font:400 17px 'Segoe UI',Arial,sans-serif;fill:#44566e}
+      .small{font:600 14px 'Segoe UI',Arial,sans-serif;fill:#53677f;letter-spacing:.5px}.board-label{font:700 14px 'Segoe UI',Arial,sans-serif;fill:#fff}
+    </style>
+  </defs>
+  <rect width="1440" height="1120" rx="28" fill="url(#bg)"/>
+  <circle cx="117" cy="84" r="4" fill="#9bb2cb"/><circle cx="1293" cy="105" r="3" fill="#9bb2cb"/><circle cx="1330" cy="260" r="4" fill="#b8c7d8"/><circle cx="105" cy="240" r="3" fill="#b8c7d8"/>
+  <text x="720" y="77" class="title" text-anchor="middle">THE SATELLITE TASKING GAME</text>
+  <text x="720" y="112" class="subtitle" text-anchor="middle">The optimizer chooses a schedule. The simulation checks what actually gets delivered.</text>
+  <text x="720" y="215" class="small" text-anchor="middle">THE SATELLITE OBSERVES ORDERS FROM ABOVE</text>
+  <!-- The satellite is shown above the board; its beam points to possible order squares. -->
+  <path d="M738 270L762 270L762 450L738 450Z" fill="url(#beam)"/>
+  <path d="M750 270L630 480M750 270L870 480" fill="none" stroke="#e85d4a" stroke-width="3" stroke-dasharray="7 7" opacity=".7"/>
+  <g transform="translate(750 258)">
+    <rect x="-62" y="-15" width="38" height="30" rx="4" fill="#3978b8" stroke="#fff" stroke-width="3"/>
+    <path d="M-51 -13V13M-39 -13V13M-61 0H-25" stroke="#d8efff" stroke-width="2"/>
+    <rect x="24" y="-15" width="38" height="30" rx="4" fill="#3978b8" stroke="#fff" stroke-width="3"/>
+    <path d="M35 -13V13M47 -13V13M25 0H61" stroke="#d8efff" stroke-width="2"/>
+    <rect x="-19" y="-22" width="38" height="44" rx="7" fill="#d99b28" stroke="#fff" stroke-width="3"/>
+    <circle cy="-7" r="5" fill="#fff"/><path d="M0 -22V-34L13 -41" fill="none" stroke="#536b86" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  <!-- Orders card -->
+  <g filter="url(#shadow)"><rect x="65" y="344" width="330" height="328" rx="20" fill="#fff"/><rect x="65" y="344" width="8" height="328" rx="4" fill="#3978b8"/></g>
+  <circle cx="105" cy="391" r="19" fill="#e8f1fa"/><text x="105" y="398" text-anchor="middle" class="card-title" fill="#3978b8">1</text><text x="137" y="398" class="card-title">ORDERS ARRIVE</text>
+  <text x="96" y="442" class="body"><tspan x="96">Each square is a customer order.</tspan><tspan x="96" dy="28">Its SLA clock starts at arrival.</tspan><tspan x="96" dy="28">Rush and disaster requests can</tspan><tspan x="96" dy="24">arrive while the day is running.</tspan></text>
+  <rect x="96" y="555" width="266" height="1" fill="#e4eaf1"/><circle cx="108" cy="589" r="8" fill="#e85d4a"/><text x="128" y="595" class="small">RUSH / DISASTER ORDER</text><circle cx="108" cy="624" r="8" fill="#3978b8"/><text x="128" y="630" class="small">REGULAR ORDER</text>
+  <!-- Chessboard -->
+  <g filter="url(#shadow)"><rect x="468" y="318" width="504" height="504" rx="12" fill="#20314b"/></g>
+  <g transform="translate(480 330)">
+    <rect width="480" height="480" fill="#f2ead9"/>
+    <g fill="#778aa0">
+      <path d="M60 0h60v60H60zM180 0h60v60h-60zM300 0h60v60h-60zM420 0h60v60h-60zM0 60h60v60H0zM120 60h60v60h-60zM240 60h60v60h-60zM360 60h60v60h-60zM60 120h60v60H60zM180 120h60v60h-60zM300 120h60v60h-60zM420 120h60v60h-60zM0 180h60v60H0zM120 180h60v60h-60zM240 180h60v60h-60zM360 180h60v60h-60zM60 240h60v60H60zM180 240h60v60h-60zM300 240h60v60h-60zM420 240h60v60h-60zM0 300h60v60H0zM120 300h60v60h-60zM240 300h60v60h-60zM360 300h60v60h-60zM60 360h60v60H60zM180 360h60v60h-60zM300 360h60v60h-60zM420 360h60v60h-60zM0 420h60v60H0zM120 420h60v60h-60zM240 420h60v60h-60zM360 420h60v60h-60z"/>
+    </g>
+    <path d="M0 0H480V480H0Z M60 0V480M120 0V480M180 0V480M240 0V480M300 0V480M360 0V480M420 0V480M0 60H480M0 120H480M0 180H480M0 240H480M0 300H480M0 360H480M0 420H480" fill="none" stroke="#fff" stroke-width="2" opacity=".62"/>
+    <!-- Colored squares show orders the optimizer may choose to serve. -->
+    <rect x="240" y="120" width="60" height="60" fill="#37a987" stroke="#fff" stroke-width="4"/><circle cx="270" cy="150" r="14" fill="#fff"/><path d="M263 150l5 5 10-11" fill="none" stroke="#178565" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="120" y="300" width="60" height="60" fill="#e85d4a" stroke="#fff" stroke-width="4"/><path d="M150 311l4 13h14l-11 8 4 15-11-9-11 9 4-15-11-8h14z" fill="#fff"/>
+    <rect x="360" y="240" width="60" height="60" fill="#3978b8" stroke="#fff" stroke-width="3"/><text x="390" y="275" class="board-label" text-anchor="middle">T042</text>
+    <text x="480" y="-10" class="small" text-anchor="end">POSSIBLE OBSERVATIONS</text>
+  </g>
+  <!-- Choice card -->
+  <g filter="url(#shadow)"><rect x="1045" y="344" width="330" height="328" rx="20" fill="#fff"/><rect x="1367" y="344" width="8" height="328" rx="4" fill="#e5a62f"/></g>
+  <circle cx="1085" cy="391" r="19" fill="#fff3d8"/><text x="1085" y="398" text-anchor="middle" class="card-title" fill="#b47a12">2</text><text x="1117" y="398" class="card-title">CHOOSE A MOVE</text>
+  <text x="1076" y="442" class="body"><tspan x="1076">The optimizer picks a satellite,</tspan><tspan x="1076" dy="28">product, and time for each order.</tspan><tspan x="1076" dy="28">It must obey visibility, slew,</tspan><tspan x="1076" dy="24">battery, storage, and SLA limits.</tspan></text>
+  <rect x="1076" y="555" width="266" height="1" fill="#e4eaf1"/><rect x="1080" y="575" width="113" height="31" rx="15" fill="#edf3f8"/><text x="1136" y="596" text-anchor="middle" class="small">8 H VIEW</text><rect x="1205" y="575" width="137" height="31" rx="15" fill="#edf3f8"/><text x="1274" y="596" text-anchor="middle" class="small">15 MIN FROZEN</text><text x="1078" y="639" class="small">RED = URGENT · GREEN = CHOSEN</text>
+  <!-- Downlink path and ground station -->
+  <path d="M750 280C750 525 765 735 791 884" fill="none" stroke="#d99b28" stroke-width="4" stroke-dasharray="9 8" marker-end="url(#arrowGold)"/><path d="M790 874V835" fill="none" stroke="#3978b8" stroke-width="3" marker-end="url(#arrowBlue)"/><text x="824" y="850" class="small" fill="#a2761e">IMAGE DATA MUST DOWNLINK</text>
+  <g transform="translate(790 910)"><path d="M-44 15H44L32 34H-32Z" fill="#d99b28" stroke="#9a6a15" stroke-width="3"/><path d="M0 14V-24M-18 14L0-24L18 14M-25-1H25" fill="none" stroke="#536b86" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M-35-30Q0-61 35-30M-25-20Q0-43 25-20" fill="none" stroke="#3978b8" stroke-width="3"/></g>
+  <text x="790" y="972" class="small" text-anchor="middle">GROUND STATION CONTACT</text><text x="790" y="994" class="body" text-anchor="middle">Shared capacity · queued data · outages</text>
+  <!-- Score -->
+  <g filter="url(#shadow)"><rect x="250" y="1020" width="940" height="70" rx="20" fill="#20314b"/></g><circle cx="300" cy="1055" r="17" fill="#37a987"/><path d="M292 1055l6 6 11-13" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="340" y="1063" font-family="'Segoe UI',Arial,sans-serif" font-size="21" font-weight="700" fill="#fff">SCORE = ON-TIME DELIVERED VALUE − WEIGHTED OBSERVATION COST</text>
+</svg>

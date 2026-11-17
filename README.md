@@ -137,6 +137,10 @@ Think of the optimizer as a player managing a satellite fleet for one simulated 
 
 The strategies (`static`, `insert_only`, `insert_preempt`, `rolling`, `hybrid`, and `oracle`) are different ways of playing under these rules. The comparison reports both the value delivered and how much each strategy changes its schedule.
 
+![Conceptual illustration of the satellite tasking rules: candidate orders on a chessboard, imaging beams, ground-station downlink, and on-time delivery scoring.](results/tasking_game_rules.svg)
+
+*Conceptual illustration: board squares stand for customer orders and candidate observations, not literal locations on Earth.*
+
 ## 3. Layout
 ```
 sartasking/
